@@ -12,7 +12,7 @@ import {
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
-import { Response } from 'src/Interfaces/Response.Interface';
+import { Response } from 'src/common/Interfaces/Response.Interface';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 @Controller('products')
@@ -35,7 +35,7 @@ export class ProductsController {
 
   @Get(':termino')
   async findOne(@Param('termino') termino: string) {
-    const response = await this.productsService.findOne(termino);
+    const response = await this.productsService.findOnePlain(termino);
     return this.handleResponse(response, 'Se ha encontrado el producto');
   }
 

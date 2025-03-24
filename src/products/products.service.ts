@@ -12,11 +12,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { Product } from './entities/product.entity';
-import { Response } from 'src/Interfaces/Response.Interface';
+
 import { isUUID } from 'class-validator';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
-import { title } from 'process';
-import { NotFoundError } from 'rxjs';
+
+import { ProductImage } from './entities';
 
 @Injectable()
 export class ProductsService {
@@ -25,17 +25,27 @@ export class ProductsService {
   constructor(
     @InjectRepository(Product) // Se inserta el reposito, que seria el modelo
     private readonly productoRepository: Repository<Product>,
+
+    @InjectRepository(ProductImage) // Se inserta el reposito, que seria el modelo
+    private readonly productImageRepository: Repository<ProductImage>,
   ) {}
 
   async create(createProductDto: CreateProductDto) {
     try {
+      const { images = [], ...productDetails } = createProductDto;
+
       //* Crea la instancia del producto con las propiedades
-      const producto = this.productoRepository.create(createProductDto);
+      const producto = this.productoRepository.create({
+        ...productDetails,
+        images: images.map((image) =>
+          this.productImageRepository.create({ url: image }),
+        ),
+      });
 
       //* Se guarda en base de datos
       await this.productoRepository.save(producto);
 
-      return producto;
+      return { ...producto, images: images };
     } catch (error) {
       this.handleExceptions(error);
     }
@@ -49,12 +59,18 @@ export class ProductsService {
         take: limit,
         skip: offset,
         //Todo: Relaciones
+        relations: {
+          images: true,
+        },
       });
 
       if (products.length === 0) {
         throw new NotFoundException('No hay productos registrados');
       }
-      return products;
+      return products.map((product) => ({
+        ...product,
+        images: product.images?.map((img) => img.url), // Solo mandar el url
+      }));
     } catch (error) {
       return this.handleExceptions(error);
     }
@@ -66,19 +82,25 @@ export class ProductsService {
 
       if (isUUID(termino)) {
         producto = await this.productoRepository.findOneBy({
-          id: termino,
+          id_producto: termino,
         });
       }
 
       if (!producto) {
         // Se construye un query
-        const queryBuilder = this.productoRepository.createQueryBuilder();
+        const queryBuilder =
+          // producto alias para hacer la consulta en el leftJoin
+          this.productoRepository.createQueryBuilder('producto');
 
         producto = await queryBuilder
-          .where(`LOWER(title) = :title or slug = :slug`, {
-            title: termino.toLowerCase().trim(),
+          .where(`UPPER(title) = :title or slug = :slug`, {
+            title: termino.toUpperCase().trim(),
             slug: termino.toLowerCase().trim(),
           })
+          // Trae la tabla con la relacion
+          // producto.images columna de la tabla con el alias
+          // prodImages alias del campo a traer
+          .leftJoinAndSelect('producto.images', 'prodImages')
           .getOne(); // Solo trae uno
       }
 
@@ -94,13 +116,23 @@ export class ProductsService {
     }
   }
 
+  async findOnePlain(term: string) {
+    const { images = [], ...rest } = await this.findOne(term);
+
+    return {
+      ...rest,
+      images: images.map((image) => image.url),
+    };
+  }
+
   async update(id: string, updateProductDto: UpdateProductDto) {
     try {
       // Busca un producto por el id
       // Pre-Carga todas las propiedades que llegan por el updateProductDto
       const producto = await this.productoRepository.preload({
-        id: id,
+        id_producto: id,
         ...updateProductDto,
+        images: [],
       });
 
       if (!producto) {
