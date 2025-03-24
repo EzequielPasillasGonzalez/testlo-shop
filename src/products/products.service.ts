@@ -4,6 +4,7 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { ObjectId, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -14,6 +15,8 @@ import { Product } from './entities/product.entity';
 import { Response } from 'src/Interfaces/Response.Interface';
 import { isUUID } from 'class-validator';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
+import { title } from 'process';
+import { NotFoundError } from 'rxjs';
 
 @Injectable()
 export class ProductsService {
@@ -22,7 +25,7 @@ export class ProductsService {
   constructor(
     @InjectRepository(Product) // Se inserta el reposito, que seria el modelo
     private readonly productoRepository: Repository<Product>,
-  ) { }
+  ) {}
 
   async create(createProductDto: CreateProductDto) {
     try {
@@ -32,7 +35,7 @@ export class ProductsService {
       //* Se guarda en base de datos
       await this.productoRepository.save(producto);
 
-      return producto
+      return producto;
     } catch (error) {
       this.handleExceptions(error);
     }
@@ -40,68 +43,90 @@ export class ProductsService {
 
   async findAll(paginationDto: PaginationDto) {
     try {
-      const { limit = 10, offset = 0 } = paginationDto
+      const { limit = 10, offset = 0 } = paginationDto;
 
       const products: Product[] = await this.productoRepository.find({
         take: limit,
-        skip: offset
+        skip: offset,
         //Todo: Relaciones
-      })
+      });
 
       if (products.length === 0) {
-        throw new BadRequestException('No hay productos registrados');
+        throw new NotFoundException('No hay productos registrados');
       }
-      return products
+      return products;
     } catch (error) {
-      return this.handleExceptions(error)
+      return this.handleExceptions(error);
     }
   }
 
   async findOne(termino: string) {
-
     try {
-      let producto
+      let producto;
 
-
-      producto = await this.productoRepository.findOneBy({
-        id: termino
-      })
-
-
-      if (!producto) {
-        throw new BadRequestException(`No hay productos registrados con el termino ${termino}`);
+      if (isUUID(termino)) {
+        producto = await this.productoRepository.findOneBy({
+          id: termino,
+        });
       }
 
+      if (!producto) {
+        // Se construye un query
+        const queryBuilder = this.productoRepository.createQueryBuilder();
 
+        producto = await queryBuilder
+          .where(`LOWER(title) = :title or slug = :slug`, {
+            title: termino.toLowerCase().trim(),
+            slug: termino.toLowerCase().trim(),
+          })
+          .getOne(); // Solo trae uno
+      }
 
+      if (!producto) {
+        throw new NotFoundException(
+          `No hay productos registrados con el termino ${termino}`,
+        );
+      }
 
-      return producto
-
+      return producto;
     } catch (error) {
-      return this.handleExceptions(error)
-
+      return this.handleExceptions(error);
     }
   }
 
-  update(id: string, updateProductDto: UpdateProductDto) {
-    return `This action updates a #${id} product`;
+  async update(id: string, updateProductDto: UpdateProductDto) {
+    try {
+      // Busca un producto por el id
+      // Pre-Carga todas las propiedades que llegan por el updateProductDto
+      const producto = await this.productoRepository.preload({
+        id: id,
+        ...updateProductDto,
+      });
+
+      if (!producto) {
+        throw new NotFoundException(
+          `No hay productos registrados con el termino ${id}`,
+        );
+      }
+
+      const newProducto = await this.productoRepository.save(producto);
+
+      return newProducto;
+    } catch (error) {
+      return this.handleExceptions(error);
+    }
   }
 
   async remove(termino: string) {
     try {
-
-      const product: Product = await this.findOne(termino)
+      const product: Product = await this.findOne(termino);
 
       await this.productoRepository.remove(product);
 
-      return
+      return;
     } catch (error) {
-      return this.handleExceptions(error)
-
+      return this.handleExceptions(error);
     }
-
-
-
   }
 
   private handleExceptions(error: any) {
@@ -113,7 +138,7 @@ export class ProductsService {
     }
 
     // Si ya es una BadRequestException, la relanza
-    if (error instanceof BadRequestException) {
+    if (error instanceof NotFoundException) {
       throw error;
     }
 
@@ -132,7 +157,4 @@ export class ProductsService {
       `Unexpected server error, check server logs`,
     );
   }
-
-
-
 }

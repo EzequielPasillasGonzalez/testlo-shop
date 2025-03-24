@@ -1,4 +1,11 @@
-import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  BeforeInsert,
+  BeforeUpdate,
+  Column,
+  Entity,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { normalizar_slug } from '../helpers/slug_normalizacion';
 
 @Entity()
 export class Product {
@@ -42,17 +49,24 @@ export class Product {
   gender: string;
 
   // tags
-  // images
+  @Column('text', {
+    array: true,
+    default: [],
+  })
+  tags: string[];
 
+  // images
   @BeforeInsert() // Antes de insertar realiza este codigo
   checkSlugInsert() {
     if (!this.slug) {
       this.slug = this.title;
     }
 
-    this.slug = this.slug
-      .toLowerCase()
-      .replaceAll(' ', '_')
-      .replaceAll("'", '');
+    this.slug = normalizar_slug(this.slug);
+  }
+
+  @BeforeUpdate()
+  CheckSlugUpdate() {
+    this.slug = normalizar_slug(this.slug);
   }
 }

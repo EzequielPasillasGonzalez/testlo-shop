@@ -17,48 +17,49 @@ import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 @Controller('products')
 export class ProductsController {
-  private response: Response
+  private response: Response;
 
-  constructor(private readonly productsService: ProductsService) { }
+  constructor(private readonly productsService: ProductsService) {}
 
   @Post()
   async create(@Body() createProductDto: CreateProductDto) {
-    const response = await this.productsService.create(createProductDto)
+    const response = await this.productsService.create(createProductDto);
     return this.handleResponse(response, 'Se ha creado el registro');
   }
 
   @Get()
-  async findAll(@Query() paginationDto: PaginationDto ) {  
-    const response = await this.productsService.findAll(paginationDto)
-    return this.handleResponse(response, 'Productos encontrados')
+  async findAll(@Query() paginationDto: PaginationDto) {
+    const response = await this.productsService.findAll(paginationDto);
+    return this.handleResponse(response, 'Productos encontrados');
   }
 
   @Get(':termino')
-  async findOne(@Param('termino', new ParseUUIDPipe()) termino: string) {
-    const response = await this.productsService.findOne(termino)
+  async findOne(@Param('termino') termino: string) {
+    const response = await this.productsService.findOne(termino);
     return this.handleResponse(response, 'Se ha encontrado el producto');
-
   }
 
-  @Patch(':termino')
-  update(@Param('termino') termino: string, @Body() updateProductDto: UpdateProductDto) {
-    return this.productsService.update(termino, updateProductDto);
+  @Patch(':id')
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateProductDto: UpdateProductDto,
+  ) {
+    return this.productsService.update(id, updateProductDto);
   }
 
-  @Delete(':termino') // Tarea
-  remove(@Param('termino', ParseUUIDPipe) termino: string) {
-    const response = this.productsService.remove(termino)
+  @Delete(':id') // Tarea
+  remove(@Param('id', ParseUUIDPipe) id: string) {
+    const response = this.productsService.remove(id);
     return this.handleResponse(response, 'Se ha eliminado el producto');
-    
   }
 
   private handleResponse(data: any, message: string) {
-    return this.response = {
+    return (this.response = {
       ok: true,
       body: {
         message,
-        data
-      }
-    }
+        data,
+      },
+    });
   }
 }

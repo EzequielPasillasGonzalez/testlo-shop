@@ -39,6 +39,10 @@ export class CreateProductDto {
 
   @IsString()
   @IsIn(['men', 'women', 'kid', 'unisex']) //* Para que solo pueda recibir datos que estan especificados
-
   gender: string;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  tags: string[];
 }
