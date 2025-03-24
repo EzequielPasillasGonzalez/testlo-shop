@@ -6,7 +6,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { ObjectId, Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { CreateProductDto } from './dto/create-product.dto';
@@ -28,6 +28,8 @@ export class ProductsService {
 
     @InjectRepository(ProductImage) // Se inserta el reposito, que seria el modelo
     private readonly productImageRepository: Repository<ProductImage>,
+
+    private readonly dataSource: DataSource,
   ) {}
 
   async create(createProductDto: CreateProductDto) {
@@ -72,7 +74,7 @@ export class ProductsService {
         images: product.images?.map((img) => img.url), // Solo mandar el url
       }));
     } catch (error) {
-      return this.handleExceptions(error);
+      this.handleExceptions(error);
     }
   }
 
@@ -112,7 +114,7 @@ export class ProductsService {
 
       return producto;
     } catch (error) {
-      return this.handleExceptions(error);
+      this.handleExceptions(error);
     }
   }
 
@@ -125,27 +127,52 @@ export class ProductsService {
     };
   }
 
-  async update(id: string, updateProductDto: UpdateProductDto) {
+  async update(id_producto: string, updateProductDto: UpdateProductDto) {
+    // Create query runner - Para actualizar las iamges
+    const queryRunner = this.dataSource.createQueryRunner();
+
     try {
+      const { images, ...toUpdate } = updateProductDto;
+
       // Busca un producto por el id
       // Pre-Carga todas las propiedades que llegan por el updateProductDto
       const producto = await this.productoRepository.preload({
-        id_producto: id,
-        ...updateProductDto,
-        images: [],
+        id_producto,
+        ...toUpdate,
       });
 
       if (!producto) {
         throw new NotFoundException(
-          `No hay productos registrados con el termino ${id}`,
+          `No hay productos registrados con el termino ${id_producto}`,
         );
       }
 
-      const newProducto = await this.productoRepository.save(producto);
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
 
-      return newProducto;
+      if (images) {
+        // Elimina las imagenes anteriores
+        await queryRunner.manager.delete(ProductImage, {
+          product: { id_producto }, // Nombre la columna en ProductImage : id de la tabla de producto
+        });
+
+        // Preapara las imagenes para despues guardar
+        producto.images = images.map((image) =>
+          this.productImageRepository.create({ url: image }),
+        );
+      }
+
+      await queryRunner.manager.save(producto);
+
+      await queryRunner.commitTransaction();
+      await queryRunner.release();
+
+      return this.findOnePlain(id_producto);
     } catch (error) {
-      return this.handleExceptions(error);
+      await queryRunner.rollbackTransaction(); // Para deshacer las transacciones si sucede un error
+      await queryRunner.release();
+
+      this.handleExceptions(error);
     }
   }
 
@@ -157,7 +184,7 @@ export class ProductsService {
 
       return;
     } catch (error) {
-      return this.handleExceptions(error);
+      this.handleExceptions(error);
     }
   }
 
@@ -188,5 +215,15 @@ export class ProductsService {
     throw new InternalServerErrorException(
       `Unexpected server error, check server logs`,
     );
+  }
+
+  async deleAllProducts() {
+    const query = this.productoRepository.createQueryBuilder('product');
+
+    try {
+      return await query.delete().where({}).execute();
+    } catch (error) {
+      this.handleExceptions(error);
+    }
   }
 }

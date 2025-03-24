@@ -7,7 +7,9 @@ export class ProductImage {
   id: number;
 
   // Se crea una relacion con otra tabla
-  @ManyToOne(() => Product, (producto) => producto.images)
+  @ManyToOne(() => Product, (producto) => producto.images, {
+    onDelete: 'CASCADE',
+  })
   product: Product;
 
   @Column('text')
