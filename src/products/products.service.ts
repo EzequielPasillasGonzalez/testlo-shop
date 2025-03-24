@@ -1,11 +1,4 @@
-import {
-  BadRequestException,
-  HttpException,
-  Injectable,
-  InternalServerErrorException,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -17,6 +10,7 @@ import { isUUID } from 'class-validator';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 import { ProductImage } from './entities';
+import { handleExceptions } from 'src/common/helpers/handleExecepcions.helpers';
 
 @Injectable()
 export class ProductsService {
@@ -49,7 +43,14 @@ export class ProductsService {
 
       return { ...producto, images: images };
     } catch (error) {
-      this.handleExceptions(error);
+      // Loguea el error
+      if (error instanceof Error) {
+        this.logger.error(`${error.name}: ${error.message}`, error.stack);
+      } else {
+        this.logger.error('Unexpected error', error);
+      }
+
+      handleExceptions(error);
     }
   }
 
@@ -74,7 +75,14 @@ export class ProductsService {
         images: product.images?.map((img) => img.url), // Solo mandar el url
       }));
     } catch (error) {
-      this.handleExceptions(error);
+      // Loguea el error
+      if (error instanceof Error) {
+        this.logger.error(`${error.name}: ${error.message}`, error.stack);
+      } else {
+        this.logger.error('Unexpected error', error);
+      }
+
+      handleExceptions(error);
     }
   }
 
@@ -114,7 +122,14 @@ export class ProductsService {
 
       return producto;
     } catch (error) {
-      this.handleExceptions(error);
+      // Loguea el error
+      if (error instanceof Error) {
+        this.logger.error(`${error.name}: ${error.message}`, error.stack);
+      } else {
+        this.logger.error('Unexpected error', error);
+      }
+
+      handleExceptions(error);
     }
   }
 
@@ -172,7 +187,14 @@ export class ProductsService {
       await queryRunner.rollbackTransaction(); // Para deshacer las transacciones si sucede un error
       await queryRunner.release();
 
-      this.handleExceptions(error);
+      // Loguea el error
+      if (error instanceof Error) {
+        this.logger.error(`${error.name}: ${error.message}`, error.stack);
+      } else {
+        this.logger.error('Unexpected error', error);
+      }
+
+      handleExceptions(error);
     }
   }
 
@@ -184,37 +206,15 @@ export class ProductsService {
 
       return;
     } catch (error) {
-      this.handleExceptions(error);
-    }
-  }
+      // Loguea el error
+      if (error instanceof Error) {
+        this.logger.error(`${error.name}: ${error.message}`, error.stack);
+      } else {
+        this.logger.error('Unexpected error', error);
+      }
 
-  private handleExceptions(error: any) {
-    // Loguea mejor el error
-    if (error instanceof Error) {
-      this.logger.error(`${error.name}: ${error.message}`, error.stack);
-    } else {
-      this.logger.error('Unexpected error', error);
+      handleExceptions(error);
     }
-
-    // Si ya es una BadRequestException, la relanza
-    if (error instanceof NotFoundException) {
-      throw error;
-    }
-
-    // Manejo especial para errores de base de datos (PostgreSQL, Sequelize, etc.)
-    if (error?.code === '23505') {
-      throw new BadRequestException(error.detail || 'Registro duplicado');
-    }
-
-    // Manejo de errores desconocidos como strings
-    if (typeof error === 'string') {
-      throw new BadRequestException(error);
-    }
-
-    // Si no se reconoce el error, se maneja como un error de servidor
-    throw new InternalServerErrorException(
-      `Unexpected server error, check server logs`,
-    );
   }
 
   async deleAllProducts() {
@@ -223,7 +223,7 @@ export class ProductsService {
     try {
       return await query.delete().where({}).execute();
     } catch (error) {
-      this.handleExceptions(error);
+      handleExceptions(error);
     }
   }
 }
