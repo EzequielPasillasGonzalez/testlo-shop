@@ -1,16 +1,14 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { isUUID } from 'class-validator';
 
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { Product } from './entities/product.entity';
-
-import { isUUID } from 'class-validator';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
-
 import { ProductImage } from './entities';
-import { handleExceptions } from 'src/common/helpers/handleExecepcions.helpers';
+import { handleExceptions } from 'src/common/helpers/';
 
 @Injectable()
 export class ProductsService {

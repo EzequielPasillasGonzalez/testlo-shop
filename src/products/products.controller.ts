@@ -12,9 +12,8 @@ import {
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
-import { Response } from 'src/common/Interfaces/Response.Interface';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
-import { handleResponse } from 'src/common/helpers/handleResponse.helper';
+import { handleResponse } from 'src/common/helpers/';
 
 @Controller('products')
 export class ProductsController {
