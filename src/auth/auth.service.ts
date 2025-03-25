@@ -1,26 +1,79 @@
-import { Injectable } from '@nestjs/common';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
-
+import { BadRequestException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import * as bcrypt from 'bcrypt'
+import { CreateUserDto } from './dto/create-user.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from './entities/users.entity';
+import { handleExceptions } from 'src/common/helpers';
+import { LoginUserDto } from './dto/login-user.dto ';
 @Injectable()
 export class AuthService {
-  create(createAuthDto: CreateAuthDto) {
-    return 'This action adds a new auth';
+
+  private readonly logger: Logger = new Logger('AuthService')
+
+  constructor(
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>
+  ) {
   }
 
-  findAll() {
-    return `This action returns all auth`;
+
+  async create(createUserDto: CreateUserDto) {
+
+    const { password, ...userData } = createUserDto
+
+
+
+    const user = this.userRepository.create({
+      ...userData,
+      password: bcrypt.hashSync(password, 10)
+    })
+
+    try {
+      const { password, isActive,...userCreated } = await this.userRepository.save(user)
+
+      return userCreated
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.error(`${error.name}: ${error.message}`, error.stack);
+      } else {
+        this.logger.error('Unexpected error', error);
+      }
+      handleExceptions(error)
+    }
+
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
+
+  async login(loginUserDto: LoginUserDto) {
+    try {
+      const { email, password } = loginUserDto
+
+      const user = await this.userRepository.findOne({
+        where: { email },
+        select: { email: true, password: true } // Solo trae estos campos
+      })
+
+      if (!user) {
+        throw new UnauthorizedException('Credentials not valid (email)')
+      }
+
+      if(!bcrypt.compareSync(password, user.password)){
+        throw new UnauthorizedException('Credentials not valid (passsword)')
+      }
+
+
+      return user
+
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.error(`${error.name}: ${error.message}`, error.stack);
+      } else {
+        this.logger.error('Unexpected error', error);
+      }
+      handleExceptions(error)
+    }
   }
 
-  update(id: number, updateAuthDto: UpdateAuthDto) {
-    return `This action updates a #${id} auth`;
-  }
 
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
-  }
 }

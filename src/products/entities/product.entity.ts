@@ -58,8 +58,8 @@ export class Product {
   tags: string[];
 
   // images
+  // Relacion entre producto e imagenes
   @OneToMany(
-    // Relacion entre producto e imagenes
     () => ProductImage, // Regresa la clase de la entidad ProductImage
     (productImage) => productImage.product,
     { cascade: true, eager: true },
