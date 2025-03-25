@@ -3,11 +3,13 @@ import {
   BeforeUpdate,
   Column,
   Entity,
+  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { normalizar_slug } from '../helpers/slug_normalizacion';
 import { ProductImage } from './';
+import { User } from 'src/auth/entities/users.entity';
 
 @Entity({ name: 'products' })
 export class Product {
@@ -67,6 +69,10 @@ export class Product {
     // Eager: Trae las relaciones de la tabla cuando se hace un find
   )
   images?: ProductImage[];
+
+  // Asi crea una nueva columna
+  @ManyToOne(() => User, (user) => user.product, { eager: true }) // Eager =>carga la relacion entre las tablas
+  user: User;
 
   @BeforeInsert() // Antes de insertar realiza este codigo
   checkSlugInsert() {

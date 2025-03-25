@@ -9,6 +9,7 @@ import { Product } from './entities/product.entity';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { ProductImage } from './entities';
 import { handleExceptions } from 'src/common/helpers/';
+import { User } from 'src/auth/entities/users.entity';
 
 @Injectable()
 export class ProductsService {
@@ -24,7 +25,7 @@ export class ProductsService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async create(createProductDto: CreateProductDto) {
+  async create(createProductDto: CreateProductDto, user: User) {
     try {
       const { images = [], ...productDetails } = createProductDto;
 
@@ -34,6 +35,7 @@ export class ProductsService {
         images: images.map((image) =>
           this.productImageRepository.create({ url: image }),
         ),
+        user,
       });
 
       //* Se guarda en base de datos
@@ -140,7 +142,11 @@ export class ProductsService {
     };
   }
 
-  async update(id_producto: string, updateProductDto: UpdateProductDto) {
+  async update(
+    id_producto: string,
+    updateProductDto: UpdateProductDto,
+    user: User,
+  ) {
     // Create query runner - Para actualizar las iamges
     const queryRunner = this.dataSource.createQueryRunner();
 
@@ -174,6 +180,8 @@ export class ProductsService {
           this.productImageRepository.create({ url: image }),
         );
       }
+
+      producto.user = user;
 
       await queryRunner.manager.save(producto);
 

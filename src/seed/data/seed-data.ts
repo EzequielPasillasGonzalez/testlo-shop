@@ -1,3 +1,5 @@
+import { User } from 'src/auth/entities/users.entity';
+
 interface SeedProduct {
   description: string;
   images: string[];
@@ -14,11 +16,33 @@ interface SeedProduct {
 type ValidSizes = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | 'XXXL';
 type ValidTypes = 'shirts' | 'pants' | 'hoodies' | 'hats';
 
+interface SeedUser {
+  email: string;
+  fullName: string;
+  password: string;
+  roles: string[];
+}
+
 interface SeedData {
+  users: SeedUser[];
   products: SeedProduct[];
 }
 
 export const initialData: SeedData = {
+  users: [
+    {
+      email: 'test@test.com',
+      fullName: 'Test One',
+      password: 'Prueba.2025',
+      roles: ['admin'],
+    },
+    {
+      email: 'test2@test.com',
+      fullName: 'Test Two',
+      password: 'Prueba.2025',
+      roles: ['user', 'super-user'],
+    },
+  ],
   products: [
     {
       description:

@@ -1,7 +1,7 @@
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { User } from '../entities/users.entity';
-import { JwtPayload } from '../interfaces/jwt-payload.interface';
+import { JwtPayload } from '../interfaces/';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -19,6 +19,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
+  //# Aqui pasa la validacion cuando se utiliza @UseGuards(AuthGuard())
+  // En las rutas
   async validate(payload: JwtPayload): Promise<User> {
     const { id } = payload;
 

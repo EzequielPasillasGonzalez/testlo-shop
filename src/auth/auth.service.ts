@@ -11,7 +11,7 @@ import { Repository } from 'typeorm';
 import { User } from './entities/users.entity';
 import { handleExceptions } from 'src/common/helpers';
 import { LoginUserDto } from './dto/login-user.dto ';
-import { JwtPayload } from './interfaces/jwt-payload.interface';
+import { JwtPayload } from './interfaces/';
 import { JwtService } from '@nestjs/jwt';
 @Injectable()
 export class AuthService {
@@ -91,5 +91,31 @@ export class AuthService {
     const token = this.jwtService.sign(payload);
 
     return token;
+  }
+
+  async checkAuthStatus(id: string) {
+    const user = await this.userRepository.findOne({
+      where: { id },
+      select: { email: true, fullName: true, roles: true, isActive: true }, // Solo trae estos campos
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('check Auth no passed');
+    }
+
+    if (!user.isActive) {
+      throw new UnauthorizedException('User is not active');
+    }
+
+    const payload: JwtPayload = {
+      id: user.id,
+    };
+
+    const token = this.getJwtToken(payload);
+
+    return {
+      user,
+      token,
+    };
   }
 }

@@ -1,24 +1,89 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Request,
+  Headers,
+  SetMetadata,
+} from '@nestjs/common';
+import { IncomingHttpHeaders } from 'http';
+import { AuthGuard } from '@nestjs/passport';
+
 import { AuthService } from './auth.service';
 
 import { LoginUserDto, CreateUserDto } from './dto/';
 import { handleResponse } from 'src/common/helpers';
+import { Auth, GetUser, RoleProtected } from './decorators/';
+import { User } from './entities/users.entity';
+import { RawHeaders } from 'src/common/decorators/get-raw-headers.decorator';
+import { UserRoleGuard } from './guards/user-role.guard';
+import { ValidRoles } from './interfaces';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   @Post('register')
   async createUser(@Body() createUserDto: CreateUserDto) {
     const newUser = await this.authService.create(createUserDto);
-    return handleResponse(newUser, 'Usuario creado')
+    return handleResponse(newUser, 'Usuario creado');
   }
 
   @Post('login')
   async loginUser(@Body() loginUserDto: LoginUserDto) {
     const login = await this.authService.login(loginUserDto);
-    return handleResponse(login, 'Loggeado con exito')
+    return handleResponse(login, 'Loggeado con exito');
   }
 
+  @Get('check-auth-status')
+  @Auth()
+  checkAuthStatus(@GetUser() user: User) {
+    return this.authService.checkAuthStatus(user.id);
+  }
 
+  @Get('private')
+  @UseGuards(AuthGuard()) // Para que nos envien un token en la peticion
+  testingPrivateRoute(
+    @Request() request: Express.Request,
+
+    @GetUser() user: User, // Custom decorator
+    // 'nombre' es la data que se le envia al decorator
+
+    @GetUser('email') userEmail: string,
+
+    @RawHeaders() rawHeaders: string[],
+    @Headers() headers: IncomingHttpHeaders,
+  ) {
+    return handleResponse({ user, userEmail, rawHeaders, headers }, 'Holi');
+  }
+
+  //* primer metodo para proteger rutas
+  // @Get('admin')
+  // @SetMetadata('roles', ['admin', 'super-user']) // * Se ponen los roles a verificar
+  // @UseGuards(AuthGuard(), UserRoleGuard) // * El UserRoleGuard ->  guardpersonalizado
+  // adminRoute(@GetUser() user: User) {
+  //   return handleResponse(user, 'Ruta pasada');
+  // }
+
+  // * segundo metodo para proteger rutas
+  // @Get('admin/protected')
+  // @RoleProtected(ValidRoles.superUser) // Se envia el rol permitido
+  // @UseGuards(AuthGuard(), UserRoleGuard)
+  // adminRoute(@GetUser() user: User) {
+  //   return handleResponse(user, 'Ruta pasada');
+  // }
+
+  // * tercer metodo para proteger rutas (recomendado)
+  @Get('admin/protected/recommend')
+  //Hace validacion de token
+  // Hace validacion de rol
+  @Auth(ValidRoles.admin, ValidRoles.superUser)
+  adminRoute(@GetUser() user: User) {
+    return handleResponse(user, 'Ruta pasada');
+  }
 }
