@@ -8,12 +8,13 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { Product } from './entities/product.entity';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { ProductImage } from './entities';
-import { handleExceptions } from 'src/common/helpers/';
+import { HandleExeceptions } from 'src/common/helpers/';
 import { User } from 'src/auth/entities/users.entity';
+
+import { ErrorCode } from 'src/common/Interfaces/ErrorCode.Interface';
 
 @Injectable()
 export class ProductsService {
-  private readonly logger = new Logger('ProductsService');
 
   constructor(
     @InjectRepository(Product) // Se inserta el reposito, que seria el modelo
@@ -23,7 +24,7 @@ export class ProductsService {
     private readonly productImageRepository: Repository<ProductImage>,
 
     private readonly dataSource: DataSource,
-  ) {}
+  ) { }
 
   async create(createProductDto: CreateProductDto, user: User) {
     try {
@@ -43,19 +44,15 @@ export class ProductsService {
 
       return { ...producto, images: images };
     } catch (error) {
-      // Loguea el error
-      if (error instanceof Error) {
-        this.logger.error(`${error.name}: ${error.message}`, error.stack);
-      } else {
-        this.logger.error('Unexpected error', error);
-      }
 
-      handleExceptions(error);
+
+      new HandleExeceptions('ProductsService', error, ErrorCode.INTERNAL_SERVER_ERROR);
     }
   }
 
   async findAll(paginationDto: PaginationDto) {
     try {
+
       const { limit = 10, offset = 0 } = paginationDto;
 
       const products: Product[] = await this.productoRepository.find({
@@ -75,14 +72,8 @@ export class ProductsService {
         images: product.images?.map((img) => img.url), // Solo mandar el url
       }));
     } catch (error) {
-      // Loguea el error
-      if (error instanceof Error) {
-        this.logger.error(`${error.name}: ${error.message}`, error.stack);
-      } else {
-        this.logger.error('Unexpected error', error);
-      }
 
-      handleExceptions(error);
+      throw new HandleExeceptions('ProductsService', error, ErrorCode.BAD_REQUEST);
     }
   }
 
@@ -122,14 +113,8 @@ export class ProductsService {
 
       return producto;
     } catch (error) {
-      // Loguea el error
-      if (error instanceof Error) {
-        this.logger.error(`${error.name}: ${error.message}`, error.stack);
-      } else {
-        this.logger.error('Unexpected error', error);
-      }
 
-      handleExceptions(error);
+      throw new HandleExeceptions('ProductsService', error, ErrorCode.RESOURCE_NOT_FOUND);
     }
   }
 
@@ -193,14 +178,7 @@ export class ProductsService {
       await queryRunner.rollbackTransaction(); // Para deshacer las transacciones si sucede un error
       await queryRunner.release();
 
-      // Loguea el error
-      if (error instanceof Error) {
-        this.logger.error(`${error.name}: ${error.message}`, error.stack);
-      } else {
-        this.logger.error('Unexpected error', error);
-      }
-
-      handleExceptions(error);
+      throw new HandleExeceptions('ProductsService', error, ErrorCode.RESOURCE_NOT_FOUND);
     }
   }
 
@@ -212,14 +190,8 @@ export class ProductsService {
 
       return;
     } catch (error) {
-      // Loguea el error
-      if (error instanceof Error) {
-        this.logger.error(`${error.name}: ${error.message}`, error.stack);
-      } else {
-        this.logger.error('Unexpected error', error);
-      }
 
-      handleExceptions(error);
+      throw new HandleExeceptions('ProductsService', error, ErrorCode.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -229,7 +201,7 @@ export class ProductsService {
     try {
       return await query.delete().where({}).execute();
     } catch (error) {
-      handleExceptions(error);
+      throw new HandleExeceptions('ProductsService', error, ErrorCode.INTERNAL_SERVER_ERROR);
     }
   }
 }

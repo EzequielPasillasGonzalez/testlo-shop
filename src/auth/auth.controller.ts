@@ -31,13 +31,13 @@ export class AuthController {
   @Post('register')
   async createUser(@Body() createUserDto: CreateUserDto) {
     const newUser = await this.authService.create(createUserDto);
-    return handleResponse(newUser, 'Usuario creado');
+    return handleResponse(true, newUser, 'Usuario creado');
   }
 
   @Post('login')
   async loginUser(@Body() loginUserDto: LoginUserDto) {
     const login = await this.authService.login(loginUserDto);
-    return handleResponse(login, 'Loggeado con exito');
+    return handleResponse(true, login, 'Loggeado con exito');
   }
 
   @Get('check-auth-status')
@@ -59,7 +59,7 @@ export class AuthController {
     @RawHeaders() rawHeaders: string[],
     @Headers() headers: IncomingHttpHeaders,
   ) {
-    return handleResponse({ user, userEmail, rawHeaders, headers }, 'Holi');
+    return handleResponse(true, { user, userEmail, rawHeaders, headers }, 'Holi');
   }
 
   //* primer metodo para proteger rutas
@@ -67,7 +67,7 @@ export class AuthController {
   // @SetMetadata('roles', ['admin', 'super-user']) // * Se ponen los roles a verificar
   // @UseGuards(AuthGuard(), UserRoleGuard) // * El UserRoleGuard ->  guardpersonalizado
   // adminRoute(@GetUser() user: User) {
-  //   return handleResponse(user, 'Ruta pasada');
+  //   return handleResponse(true, user, 'Ruta pasada');
   // }
 
   // * segundo metodo para proteger rutas
@@ -75,7 +75,7 @@ export class AuthController {
   // @RoleProtected(ValidRoles.superUser) // Se envia el rol permitido
   // @UseGuards(AuthGuard(), UserRoleGuard)
   // adminRoute(@GetUser() user: User) {
-  //   return handleResponse(user, 'Ruta pasada');
+  //   return handleResponse(true, user, 'Ruta pasada');
   // }
 
   // * tercer metodo para proteger rutas (recomendado)
@@ -84,6 +84,6 @@ export class AuthController {
   // Hace validacion de rol
   @Auth(ValidRoles.admin, ValidRoles.superUser)
   adminRoute(@GetUser() user: User) {
-    return handleResponse(user, 'Ruta pasada');
+    return handleResponse(true, user, 'Ruta pasada');
   }
 }

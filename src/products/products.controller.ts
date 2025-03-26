@@ -30,19 +30,19 @@ export class ProductsController {
     @GetUser() user: User,
   ) {
     const response = await this.productsService.create(createProductDto, user);
-    return handleResponse(response, 'Se ha creado el registro');
+    return handleResponse(true, response, 'Se ha creado el registro');
   }
 
   @Get()
   async findAll(@Query() paginationDto: PaginationDto) {
     const response = await this.productsService.findAll(paginationDto);
-    return handleResponse(response, 'Productos encontrados');
+    return handleResponse(true, response, 'Productos encontrados');
   }
 
   @Get(':termino')
   async findOne(@Param('termino') termino: string) {
     const response = await this.productsService.findOnePlain(termino);
-    return handleResponse(response, 'Se ha encontrado el producto');
+    return handleResponse(true, response, 'Se ha encontrado el producto');
   }
 
   @Patch(':id')
@@ -59,6 +59,6 @@ export class ProductsController {
   @Auth(ValidRoles.superUser)
   remove(@Param('id', ParseUUIDPipe) id: string) {
     const response = this.productsService.remove(id);
-    return handleResponse(response, 'Se ha eliminado el producto');
+    return handleResponse(true, response, 'Se ha eliminado el producto');
   }
 }

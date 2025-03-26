@@ -33,10 +33,9 @@ export class FilesController {
     const path = this.filesService.getStaticProductImage(imageName);
 
     res.sendFile(path);
-    // return handleResponse(path, 'Se encontro el documento');
+    // return handleResponse(true, path, 'Se encontro el documento');
   }
 
-  
   @Post('product')
   @UseInterceptors(
     //# Nombre del archivo que recibimos desde el body
@@ -58,6 +57,6 @@ export class FilesController {
       file.filename
     }`;
 
-    return handleResponse(secureUrl, 'Imagen cargada');
+    return handleResponse(true, secureUrl, 'Imagen cargada');
   }
 }

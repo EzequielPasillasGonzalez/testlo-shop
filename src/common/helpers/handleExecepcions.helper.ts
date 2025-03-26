@@ -1,25 +1,29 @@
-import { BadRequestException, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import {
+  HttpException,
+  Logger,
+} from '@nestjs/common';
+import { ErrorCode } from '../Interfaces/ErrorCode.Interface';
+import { Response } from '../Interfaces/Response.Interface';
 
-export const handleExceptions = (error: any): never => {
-  
+export class HandleExeceptions extends HttpException {
 
-  throw error;
-  // // Si ya es una BadRequestException, la relanza
-  // if (error instanceof NotFoundException) {
-  // }
+  private readonly logger: Logger;
 
-  // // Manejo especial para errores de base de datos (PostgreSQL, Sequelize, etc.)
-  // if (error?.code === '23505') {
-  //   throw new BadRequestException(error.detail || 'Registro duplicado');
-  // }
 
-  // // Manejo de errores desconocidos como strings
-  // if (typeof error === 'string') {
-  //   throw new BadRequestException(error);
-  // }
+  constructor(serviceName: string, error: Error, errorCode: ErrorCode) {    
 
-  // // Si no se reconoce el error, se maneja como un error de servidor
-  // throw new InternalServerErrorException(
-  //   `Unexpected server error, check server logs`,
-  // );
-};
+    const response: Response = {
+      ok: false,
+      message: error.message || 'Error interno',
+      body: {},
+    };
+
+    super(response, errorCode);
+
+    this.logger = new Logger(serviceName);
+    
+    // Loguea el error con el nombre del servicio
+    this.logger.error(`${error.name}: ${error.message}`, error.stack);
+  }
+
+}
