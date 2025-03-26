@@ -16,18 +16,20 @@ import { ApiProperty } from '@nestjs/swagger';
 export class Product {
   //* Definicion de las tablas
   @ApiProperty({
+    // * Para documentar respuesta con swagger
     example: 'e838bbc8-8a42-43be-ab18-99759b0fe9e1',
     uniqueItems: true,
-    description: 'Product Id'
-  }) // Para documentar respuesta con swagger
+    description: 'Product Id',
+  })
   @PrimaryGeneratedColumn('uuid') //* Clave primaria de tipo uuid
   id_producto: string;
 
   @ApiProperty({
-    example: `Women's Small Wordmark Short Sleeve V-Neck Tee`,    
+    // * Para documentar respuesta con swagger
+    example: `Women's Small Wordmark Short Sleeve V-Neck Tee`,
     description: 'Product Name',
     uniqueItems: true,
-  }) // Para documentar respuesta con swagger
+  })
   @Column('text', {
     //* Columna varchar
     unique: true,
@@ -35,20 +37,22 @@ export class Product {
   title: string;
 
   @ApiProperty({
-    example: 0,    
+    // * Para documentar respuesta con swagger
+    example: 0,
     description: 'Product price',
-    default: 0
-  }) // Para documentar respuesta con swagger
+    default: 0,
+  })
   @Column('float', {
     default: 0,
   })
   price: number;
 
   @ApiProperty({
-    example: 'In magna tempor aliqua est ipsum enim.',    
+    // * Para documentar respuesta con swagger
+    example: 'In magna tempor aliqua est ipsum enim.',
     description: 'Product description',
-    nullable: true
-  }) // Para documentar respuesta con swagger
+    nullable: true,
+  })
   @Column({
     type: 'text',
     nullable: true,
@@ -56,37 +60,51 @@ export class Product {
   description: string;
 
   @ApiProperty({
-    example: `women_small_wordmark_short_sleeve_v-neck_tee`,    
+    // * Para documentar respuesta con swagger
+    example: `women_small_wordmark_short_sleeve_v-neck_tee`,
     description: 'Product slug',
     uniqueItems: true,
-  }) // Para documentar respuesta con swagger
+  })
   @Column('text', {
     unique: true,
   })
   slug: string;
 
   @ApiProperty({
-    example: 0,    
+    // * Para documentar respuesta con swagger
+    example: 0,
     description: 'Product stock',
-    default: 0
-  }) // Para documentar respuesta con swagger
+    default: 0,
+  })
   @Column('int', {
     default: 0,
   })
   stock: number;
 
-  @ApiProperty() // Para documentar respuesta con swagger
+  @ApiProperty({
+    // * Para documentar respuesta con swagger
+    example: ['XS', 'S', 'M'],
+    description: 'Product sizes',
+  })
   @Column('text', {
     array: true,
   })
   sizes: string[];
 
-  @ApiProperty() // Para documentar respuesta con swagger
+  @ApiProperty({
+    // * Para documentar respuesta con swagger
+    example: 'men',
+    description: 'Product gender',
+  })
   @Column('text')
   gender: string;
 
   // tags
-  @ApiProperty() // Para documentar respuesta con swagger
+  @ApiProperty({
+    // * Para documentar respuesta con swagger
+    example: ['sweatshirt'],
+    description: 'Product sizes',
+  })
   @Column('text', {
     array: true,
     default: [],
@@ -94,7 +112,7 @@ export class Product {
   tags: string[];
 
   // images
-  @ApiProperty() // Para documentar respuesta con swagger
+  @ApiProperty() // * Para documentar respuesta con swagger
   // Relacion entre producto e imagenes
   @OneToMany(
     () => ProductImage, // Regresa la clase de la entidad ProductImage
@@ -122,6 +140,4 @@ export class Product {
   CheckSlugUpdate() {
     this.slug = normalizar_slug(this.slug);
   }
-
-  
 }
